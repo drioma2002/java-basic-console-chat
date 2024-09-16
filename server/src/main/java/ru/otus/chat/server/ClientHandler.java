@@ -27,18 +27,22 @@ public class ClientHandler {
         username = "user" + userCount;
         new Thread(() -> {
             try {
-                System.out.println("Клиент подключился ");
+                System.out.println("Подключился клиент: " + this.username);
                 while (true) {
                     String message = in.readUTF();
                     if (message.startsWith("/")) {
                         if (message.startsWith("/exit")){
+                            System.out.println("Отключился клиент: " + this.username);
                             sendMessage("/exitok");
                             break;
                         }
-                        
+
+                        if (message.startsWith("/w ")) {
+                            server.privateMessage(this, message);
+                        }
 
                     } else {
-                        server.broadcastMessage(username + " : " + message);
+                        server.broadcastMessage(username + ": " + message);
                     }
                 }
             } catch (IOException e) {
