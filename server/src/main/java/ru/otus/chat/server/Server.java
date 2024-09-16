@@ -28,6 +28,7 @@ public class Server {
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
+        broadcastMessage("К серверу подключился: " + clientHandler.getUsername());
         clients.add(clientHandler);
     }
 
@@ -39,5 +40,39 @@ public class Server {
         for (ClientHandler client : clients) {
             client.sendMessage(message);
         }
+    }
+
+    public synchronized void privateMessage(ClientHandler sender, String message) {
+        String[] messageArray = message.split(" ", 3);
+
+        if (messageArray.length != 3) {
+            sender.sendMessage("Неверный формат ЛС. (/w ИмяПользователя ТекстСообщения");
+            return;
+        }
+
+        String recipient = messageArray[1];
+        String privateMessage = messageArray[2];
+
+        if (!isUserExists(recipient)) {
+            sender.sendMessage("Пользователь " + recipient + " не подключен к серверу");
+            return;
+        }
+
+        for (ClientHandler c : clients) {
+            if (c.getUsername().equals(recipient)) {
+                c.sendMessage("(ЛС от " + sender.getUsername() + "): " + privateMessage);
+                sender.sendMessage("(ЛС для " + recipient + "): " + privateMessage);
+                return;
+            }
+        }
+    }
+
+    public synchronized boolean isUserExists(String username) {
+        for (ClientHandler c : clients) {
+            if (c.getUsername().equals(username)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
