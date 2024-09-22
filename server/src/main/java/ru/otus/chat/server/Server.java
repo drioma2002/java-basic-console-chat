@@ -74,14 +74,47 @@ public class Server {
         }
     }
 
+    public synchronized void kick (ClientHandler sender, String message) {
+        String[] messageArray = message.split(" ", 2);
+        if (messageArray.length != 2) {
+            sender.sendMessage("Неверный формат команды (/kick ИмяПользователя)");
+            return;
+        }
+
+        String userToKick = messageArray[1].trim();
+        if (!isUserExists(userToKick)) {
+            sender.sendMessage("Пользователь " + userToKick + " не существует.");
+            return;
+        }
+
+        if (!authenticatedProvider.isUserAdmin(sender.getUsername())) {
+            sender.sendMessage("У вас нет прав для отключения пользователя " + userToKick);
+            return;
+        }
+
+        if (sender.getUsername().equals(userToKick)) {
+            sender.sendMessage("Вы не можете отключить самого себя");
+            return;
+        }
+
+        for (ClientHandler client : clients) {
+            if (client.getUsername().equals(userToKick)) {
+                broadcastMessage("Пользователь " + userToKick + " был отключен от чата администратором " + sender.getUsername());
+                client.sendMessage("/exitok");
+                return;
+            }
+        }
+    }
+
     public synchronized boolean isUserExists(String username) {
-        for (ClientHandler c : clients) {
-            if (c.getUsername().equals(username)) {
+        for (ClientHandler client : clients) {
+            if (client.getUsername().equals(username)) {
                 return true;
             }
         }
         return false;
     }
+
     public boolean isUsernameBusy(String username) {
         for (ClientHandler client : clients) {
             if (client.getUsername().equals(username)) {

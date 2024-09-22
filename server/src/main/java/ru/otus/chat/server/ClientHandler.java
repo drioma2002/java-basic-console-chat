@@ -33,7 +33,6 @@ public class ClientHandler {
                     String message = in.readUTF();
                     if (message.startsWith("/")) {
                         if (message.startsWith("/exit")){
-                            System.out.println("Отключился клиент: " + this.username);
                             sendMessage("/exitok");
                             break;
                         }
@@ -45,7 +44,7 @@ public class ClientHandler {
                                 continue;
                             }
                             if (server.getAuthenticatedProvider()
-                                    .authenticate(this,elements[1], elements[2])){
+                                    .authenticate(this, elements[1], elements[2])){
                                 break;
                             }
                             continue;
@@ -58,7 +57,7 @@ public class ClientHandler {
                                 continue;
                             }
                             if (server.getAuthenticatedProvider()
-                                    .registration(this,elements[1], elements[2], elements[3])){
+                                    .registration(this, elements[1], elements[2], elements[3])){
                                 break;
                             }
                             continue;
@@ -67,7 +66,8 @@ public class ClientHandler {
                     sendMessage("Перед работой необходимо пройти аутентификацию командой " +
                             "/auth login password или регистрацию командой /reg login password username");
                 }
-                System.out.println("Клиент "+ username+ " успешно прошел аутентификацию");
+                System.out.println("Клиент " + username + " успешно прошел аутентификацию");
+
                 //цикл работы
                 while (true) {
                     String message = in.readUTF();
@@ -79,6 +79,10 @@ public class ClientHandler {
                         
                         if (message.startsWith("/w ")) {
                             server.privateMessage(this, message);
+                        }
+
+                        if (message.startsWith("/kick ")) {
+                            server.kick(this, message);
                         }
 
                     } else {

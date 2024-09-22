@@ -8,11 +8,20 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider {
         private String login;
         private String password;
         private String username;
+        private Role role;
 
-        public User(String login, String password, String username) {
+        public User(String login, String password, String username, Role role) {
             this.login = login;
             this.password = password;
             this.username = username;
+            this.role = role;
+        }
+
+        public String getUsername(){
+            return username;
+        }
+        public Role getUserrole(){
+            return role;
         }
     }
 
@@ -22,10 +31,10 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider {
     public InMemoryAuthenticationProvider(Server server) {
         this.server = server;
         this.users = new ArrayList<>();
-        this.users.add(new User("login1", "password1", "username1"));
-        this.users.add(new User("qwe", "qwe", "qwe1"));
-        this.users.add(new User("asd", "asd", "asd1"));
-        this.users.add(new User("zxc", "zxc", "zxc1"));
+        this.users.add(new User("admin", "admin", "admin1", Role.ADMIN));
+        this.users.add(new User("qwe", "qwe", "qwe1", Role.USER));
+        this.users.add(new User("asd", "asd", "asd1", Role.USER));
+        this.users.add(new User("zxc", "zxc", "zxc1", Role.USER));
     }
 
     @Override
@@ -94,11 +103,22 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider {
             clientHandler.sendMessage("Указанное имя пользователя уже занято");
             return false;
         }
-        users.add(new User(login, password, username));
+        users.add(new User(login, password, username, Role.USER));
         clientHandler.setUsername(username);
         server.subscribe(clientHandler);
         clientHandler.sendMessage("/regok " + username);
 
         return true;
     }
+
+    @Override
+    public boolean isUserAdmin(String username) {
+        for (User user : users) {
+            if (user.username.equals(username) && user.role.equals(Role.ADMIN)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
