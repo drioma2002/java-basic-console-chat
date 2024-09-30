@@ -9,10 +9,20 @@ import java.util.List;
 public class Server {
     private int port;
     private List<ClientHandler> clients;
+    private AuthenticatedProvider authenticatedProvider;
 
     public Server(int port) {
         this.port = port;
         clients = new ArrayList<>();
+
+        //authenticatedProvider = new InMemoryAuthenticationProvider(this);
+        authenticatedProvider = new JDBCAuthenticationProvider(this);
+
+        authenticatedProvider.initialize();
+    }
+
+    public AuthenticatedProvider getAuthenticatedProvider() {
+        return authenticatedProvider;
     }
 
     public void start() {
@@ -20,7 +30,7 @@ public class Server {
             System.out.println("Сервер запущен на порту: " + port);
             while (true) {
                 Socket socket = serverSocket.accept();
-                subscribe(new ClientHandler(this, socket));
+                new ClientHandler(this, socket);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -28,6 +38,7 @@ public class Server {
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
+        broadcastMessage("К серверу подключился: " + clientHandler.getUserName());
         clients.add(clientHandler);
     }
 
@@ -39,5 +50,82 @@ public class Server {
         for (ClientHandler client : clients) {
             client.sendMessage(message);
         }
+    }
+
+    public synchronized void privateMessage(ClientHandler sender, String message) {
+        String[] messageArray = message.split(" ", 3);
+
+        if (messageArray.length != 3) {
+            sender.sendMessage("Неверный формат ЛС. (/w ИмяПользователя ТекстСообщения");
+            return;
+        }
+
+        String recipient = messageArray[1];
+        String privateMessage = messageArray[2];
+
+        if (!isUserExists(recipient)) {
+            sender.sendMessage("Пользователь " + recipient + " не подключен к серверу");
+            return;
+        }
+
+        for (ClientHandler c : clients) {
+            if (c.getUserName().equals(recipient)) {
+                c.sendMessage("(ЛС от " + sender.getUserName() + "): " + privateMessage);
+                sender.sendMessage("(ЛС для " + recipient + "): " + privateMessage);
+                return;
+            }
+        }
+    }
+
+    public synchronized void kick (ClientHandler sender, String message) {
+
+        String[] messageArray = message.split(" ", 2);
+        if (messageArray.length != 2) {
+            sender.sendMessage("Неверный формат команды (/kick ИмяПользователя)");
+            return;
+        }
+
+        String userToKick = messageArray[1].trim();
+        if (!isUserExists(userToKick)) {
+            sender.sendMessage("Пользователь " + userToKick + " не существует.");
+            return;
+        }
+
+        if (!authenticatedProvider.isUserAdmin(sender)) {
+            sender.sendMessage("У вас нет прав для отключения пользователя " + userToKick);
+            return;
+        }
+
+        if (sender.getUserName().equals(userToKick)) {
+            sender.sendMessage("Вы не можете отключить самого себя");
+            return;
+        }
+
+        for (ClientHandler client : clients) {
+            if (client.getUserName().equals(userToKick)) {
+                broadcastMessage("Пользователь " + userToKick + " был отключен от чата администратором " + sender.getUserName());
+                client.sendMessage("/exitok");
+                return;
+            }
+        }
+
+    }
+
+    public synchronized boolean isUserExists(String username) {
+        for (ClientHandler client : clients) {
+            if (client.getUserName().equals(username)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isUsernameBusy(String username) {
+        for (ClientHandler client : clients) {
+            if (client.getUserName().equals(username)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
