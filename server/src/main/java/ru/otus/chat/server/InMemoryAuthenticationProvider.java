@@ -16,13 +16,6 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider {
             this.username = username;
             this.role = role;
         }
-
-        public String getUsername(){
-            return username;
-        }
-        public Role getUserrole(){
-            return role;
-        }
     }
 
     private Server server;
@@ -63,7 +56,7 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider {
             return false;
         }
 
-        clientHandler.setUsername(authName);
+        clientHandler.setUserName(authName);
         server.subscribe(clientHandler);
         clientHandler.sendMessage("/authok " + authName);
         return true;
@@ -104,7 +97,7 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider {
             return false;
         }
         users.add(new User(login, password, username, Role.USER));
-        clientHandler.setUsername(username);
+        clientHandler.setUserName(username);
         server.subscribe(clientHandler);
         clientHandler.sendMessage("/regok " + username);
 
@@ -112,7 +105,8 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider {
     }
 
     @Override
-    public boolean isUserAdmin(String username) {
+    public boolean isUserAdmin(ClientHandler clientHandler) {
+        String username = clientHandler.getUserName();
         for (User user : users) {
             if (user.username.equals(username) && user.role.equals(Role.ADMIN)) {
                 return true;
@@ -120,5 +114,4 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider {
         }
         return false;
     }
-
 }

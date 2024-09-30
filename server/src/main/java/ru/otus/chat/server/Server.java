@@ -14,7 +14,10 @@ public class Server {
     public Server(int port) {
         this.port = port;
         clients = new ArrayList<>();
-        authenticatedProvider = new InMemoryAuthenticationProvider(this);
+
+        //authenticatedProvider = new InMemoryAuthenticationProvider(this);
+        authenticatedProvider = new JDBCAuthenticationProvider(this);
+
         authenticatedProvider.initialize();
     }
 
@@ -35,7 +38,7 @@ public class Server {
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
-        broadcastMessage("К серверу подключился: " + clientHandler.getUsername());
+        broadcastMessage("К серверу подключился: " + clientHandler.getUserName());
         clients.add(clientHandler);
     }
 
@@ -66,8 +69,8 @@ public class Server {
         }
 
         for (ClientHandler c : clients) {
-            if (c.getUsername().equals(recipient)) {
-                c.sendMessage("(ЛС от " + sender.getUsername() + "): " + privateMessage);
+            if (c.getUserName().equals(recipient)) {
+                c.sendMessage("(ЛС от " + sender.getUserName() + "): " + privateMessage);
                 sender.sendMessage("(ЛС для " + recipient + "): " + privateMessage);
                 return;
             }
@@ -75,6 +78,7 @@ public class Server {
     }
 
     public synchronized void kick (ClientHandler sender, String message) {
+
         String[] messageArray = message.split(" ", 2);
         if (messageArray.length != 2) {
             sender.sendMessage("Неверный формат команды (/kick ИмяПользователя)");
@@ -87,28 +91,29 @@ public class Server {
             return;
         }
 
-        if (!authenticatedProvider.isUserAdmin(sender.getUsername())) {
+        if (!authenticatedProvider.isUserAdmin(sender)) {
             sender.sendMessage("У вас нет прав для отключения пользователя " + userToKick);
             return;
         }
 
-        if (sender.getUsername().equals(userToKick)) {
+        if (sender.getUserName().equals(userToKick)) {
             sender.sendMessage("Вы не можете отключить самого себя");
             return;
         }
 
         for (ClientHandler client : clients) {
-            if (client.getUsername().equals(userToKick)) {
-                broadcastMessage("Пользователь " + userToKick + " был отключен от чата администратором " + sender.getUsername());
+            if (client.getUserName().equals(userToKick)) {
+                broadcastMessage("Пользователь " + userToKick + " был отключен от чата администратором " + sender.getUserName());
                 client.sendMessage("/exitok");
                 return;
             }
         }
+
     }
 
     public synchronized boolean isUserExists(String username) {
         for (ClientHandler client : clients) {
-            if (client.getUsername().equals(username)) {
+            if (client.getUserName().equals(username)) {
                 return true;
             }
         }
@@ -117,7 +122,7 @@ public class Server {
 
     public boolean isUsernameBusy(String username) {
         for (ClientHandler client : clients) {
-            if (client.getUsername().equals(username)) {
+            if (client.getUserName().equals(username)) {
                 return true;
             }
         }

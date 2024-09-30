@@ -4,5 +4,5 @@ public interface AuthenticatedProvider {
     void initialize();
     boolean authenticate(ClientHandler clientHandler, String login, String password);
     boolean registration(ClientHandler clientHandler, String login, String password, String username);
-    boolean isUserAdmin(String username);
+    boolean isUserAdmin(ClientHandler user);
 }

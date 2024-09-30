@@ -11,14 +11,23 @@ public class ClientHandler {
     private DataInputStream in;
     private DataOutputStream out;
 
-    private String username;
+    private String userName;
+    private Role userRole;
 
-    public String getUsername() {
-        return username;
+    public Role getUserRole() {
+        return userRole;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setUserRole(Role userRole) {
+        this.userRole = userRole;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     public ClientHandler(Server server, Socket socket) throws IOException {
@@ -66,7 +75,7 @@ public class ClientHandler {
                     sendMessage("Перед работой необходимо пройти аутентификацию командой " +
                             "/auth login password или регистрацию командой /reg login password username");
                 }
-                System.out.println("Клиент " + username + " успешно прошел аутентификацию");
+                System.out.println("Клиент " + userName + " успешно прошел аутентификацию");
 
                 //цикл работы
                 while (true) {
@@ -86,7 +95,7 @@ public class ClientHandler {
                         }
 
                     } else {
-                        server.broadcastMessage(username + " : " + message);
+                        server.broadcastMessage(userName + " : " + message);
                     }
                 }
             } catch (IOException e) {
@@ -107,6 +116,7 @@ public class ClientHandler {
 
     public void disconnect(){
         server.unsubscribe(this);
+
         try {
             in.close();
         } catch (IOException e) {
